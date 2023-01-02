@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang=en>
+<head>
+  <meta charset=utf-8>
+  <title>Snapper</title>
+  <meta name=description content="Snapper">
+  <meta name=viewport content=width=device-width,initial-scale=1>
+  <meta name=apple-mobile-web-app-capable content=yes>
+  <meta name=apple-mobile-web-app-status-bar-style content=default>
+  <meta name=theme-color content="#fc4">
+  <style>
+    html, body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    header {
+      background-color: #666;
+      color: white;
+    }
+    header h1 {
+      font-size: 1em;
+      padding: 1ex 1em;
+      margin: 0;
+    }
+    header h1 a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      background-color: #eee;
+      overflow-x: scroll;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+    main::-webkit-scrollbar {
+      display: none;
+    }
+    main section {
+      scroll-snap-align: start;
+      background-color: #ddd;
+    }
+    main section article {
+      width: 100vw;
+    }
+    main section article output {
+      padding: 3ex 1em;
+      font-size: 8em;
+    }
+
+    footer {
+      background-color: #333;
+      color: white;
+    }
+    footer p {
+      margin: 0;
+      padding: 1ex 1em;
+    }
+  </style>
+</head>
+<body>
+  <header><h1><a href=#home>Snapper</a></h1></header>
+  <main>
+    <section id=left>
+      <article><output>-1</output></article>
+    </section>
+    <section id=home>
+      <article><output>0</output></article>
+    </section>
+    <section id=right>
+      <article><output>1</output</article>
+    </section>
+  </main>
+  <footer><p>&copy; 2023 Johannes Schmidt</p></footer>
+  <script>
+     const root = document.querySelector('main')
+
+     const observer = new IntersectionObserver((entries, observer) => {
+       const [{ target, isIntersecting } ] = entries
+       if (isIntersecting) {
+         const currentOutput = target.querySelector('output')
+         const currentValue = parseInt(currentOutput.value, 10)
+
+         const [left, center, right] = document.querySelectorAll('section')
+
+         switch (target.id) {
+           case 'left':
+             right.querySelector('output').value = currentValue - 1
+             right.id = 'left'
+             left.id = 'home'
+             center.id = 'right'
+             root.insertBefore(right, root.firstChild)
+             
+             break;
+           case 'right':
+             left.querySelector('output').value = currentValue + 1
+             center.id = 'left'
+             right.id = 'home'
+             left.id = 'right'
+             root.appendChild(left)
+             
+             break;
+         }
+
+         target.id = 'home'
+       }
+     }, {
+       root,
+       rootMargin: '0px',
+       threshold: 1.0
+     })
+     const targets = document.querySelectorAll('section')
+     for (const target of targets) {
+       observer.observe(target)
+     }
+  </script>
+</body>
