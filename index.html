@@ -42,18 +42,19 @@
       scrollbar-width: none;
     }
     main::-webkit-scrollbar {
-      display: none;
+      ddisplay: none;
     }
     main section {
       scroll-snap-align: start;
       background-color: #ddd;
     }
     main section article {
+      outline: 1px dotted silver;
       width: 100vw;
+      padding: 10vh 0;
     }
     main section article output {
-      padding: 3ex 1em;
-      font-size: 8em;
+      font-size: 6em;
     }
 
     footer {
@@ -69,57 +70,92 @@
 <body>
   <header><h1><a href=#home>Snapper</a></h1></header>
   <main>
-    <section id=left>
-      <article><output>-1</output></article>
-    </section>
-    <section id=home>
-      <article><output>0</output></article>
-    </section>
-    <section id=right>
-      <article><output>1</output</article>
-    </section>
   </main>
   <footer><p>&copy; 2023 Johannes Schmidt</p></footer>
   <script>
-     const root = document.querySelector('main')
+    const root = document.querySelector('main')
 
-     const observer = new IntersectionObserver((entries, observer) => {
-       const [{ target, isIntersecting } ] = entries
-       if (isIntersecting) {
-         const currentOutput = target.querySelector('output')
-         const currentValue = parseInt(currentOutput.value, 10)
+    const windowSize = 2
 
-         const [left, center, right] = document.querySelectorAll('section')
 
-         switch (target.id) {
-           case 'left':
-             right.querySelector('output').value = currentValue - 1
-             right.id = 'left'
-             left.id = 'home'
-             center.id = 'right'
-             root.insertBefore(right, root.firstChild)
-             
-             break;
-           case 'right':
-             left.querySelector('output').value = currentValue + 1
-             center.id = 'left'
-             right.id = 'home'
-             left.id = 'right'
-             root.appendChild(left)
-             
-             break;
-         }
+    class Win {
+      constructor (element, { windowSize }) {
+        this.windowSize = windowSize
+        this.element = element
+        this.wins = []
+        for (let i = -windowSize; i <= windowSize; i++) {
+          const section = document.createElement('section')
+          section.dataset.i = i
+          if (i === 0) {
+            section.id = 'home'
+          }
+          const article = document.createElement('article')
+          const output = document.createElement('output')
+          const value = i
+          output.value = `#${value}`
+          article.appendChild(output)
+          section.appendChild(article)
+          this.element.appendChild(section)
 
-         target.id = 'home'
-       }
-     }, {
-       root,
-       rootMargin: '0px',
-       threshold: 1.0
-     })
-     const targets = document.querySelectorAll('section')
-     for (const target of targets) {
-       observer.observe(target)
-     }
+          this.wins.push({
+            section,
+            output,
+            value,
+          })
+        }
+      }
+
+      moveBy (x) {
+        console.log('move by', x)
+        if (x > 0) {
+          const windowsToAppend = this.wins.splice(0, x)
+          let nextValue = this.wins[this.wins.length - 1].value
+          for (const w of windowsToAppend) {
+            nextValue++
+            w.value = nextValue
+            this.element.appendChild(w.section)
+          }
+          this.wins.push(...windowsToAppend)
+        } else if (x < 0) {
+          const windowsToPrepend = this.wins.splice(this.wins.length - 1 + x, -x)
+          let nextValue = this.wins[0].value
+          for (const w of windowsToPrepend) {
+            nextValue--
+            w.value = nextValue
+            this.element.insertBefore(w.section, this.element.firstChild)
+          }
+          this.wins.unshift(...windowsToPrepend)
+        }
+        this.render()
+        location.replace('#home')
+      }
+
+      render () {
+        for (const [i, { section, output, value }] of this.wins.entries()) {
+          section.dataset.i = i - this.windowSize
+          section.id = i === this.windowSize ? 'home' : 'sibling'
+          output.value = `#${value}`
+        }
+      }
+    }
+
+    const w = new Win(root, { windowSize })
+
+
+    const observer = new IntersectionObserver((entries, observer) => {
+      const [{ target, isIntersecting } ] = entries
+      if (isIntersecting) {
+        w.moveBy(target.dataset.i)
+      }
+    }, {
+      root,
+      rootMargin: '0px',
+      threshold: 1.0,
+      // threshold: 0.9,
+    })
+    const targets = document.querySelectorAll('section')
+    for (const target of targets) {
+      observer.observe(target)
+    }
   </script>
 </body>
